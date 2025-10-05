@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  # Crowd Counting Model from Hugging Face
+  crowd-model:
+    image: registry.hf.space/leuschnm-crowdcounting-with-scale-adaptive-selec-d3af9d4:latest
+    container_name: crowd-counting-model
+    platform: linux/amd64
+    ports:
+      - "7860:7860"
+    command: python app.py
+    restart: unless-stopped
+    environment:
+      - GRADIO_SERVER_NAME=0.0.0.0
+      - GRADIO_SERVER_PORT=7860
+    networks:
+      - temple-network
+
+networks:
+  temple-network:
+    driver: bridge

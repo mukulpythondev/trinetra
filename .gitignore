@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.pkl
+
+# Virtual environments
+venv/
+.env/
+.venv/
+
+# Node.js
+node_modules/
+dist/
+build/
+
+# Logs & caches
+*.log
+*.csv
+*.sqlite
+.DS_Store
+.cache/
+
+# IDEs / Editors
+.vscode/
+.idea/
+*.swp
