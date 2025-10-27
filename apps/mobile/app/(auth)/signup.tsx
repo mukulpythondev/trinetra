@@ -1,4 +1,3 @@
-// app/(auth)/signup.tsx
 import {
   View,
   Text,
@@ -9,17 +8,13 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
-import axios from 'axios';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { useAuth } from './AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
-
-const API_URL = 'http://172.20.45.229:5000/api'; // Your backend URL
+import { ID, account, databases } from '../../lib/appwrite.config'; 
 
 export default function Signup() {
   const router = useRouter();
-  const { login } = useAuth();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -29,27 +24,28 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
+  // 🧠 Replace these with your real Appwrite DB + Collection IDs
+  const DATABASE_ID = 'YOUR_DATABASE_ID';
+  const COLLECTION_ID = 'YOUR_COLLECTION_ID';
+
   const validateInputs = () => {
     if (!name.trim() || !email.trim() || !phone.trim() || !password) {
       Alert.alert('Error', 'Please fill all fields');
       return false;
     }
 
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       Alert.alert('Error', 'Please enter a valid email address');
       return false;
     }
 
-    // Phone validation (10 digits)
     const phoneRegex = /^[0-9]{10}$/;
     if (!phoneRegex.test(phone)) {
       Alert.alert('Error', 'Please enter a valid 10-digit phone number');
       return false;
     }
 
-    // Password validation
     if (password.length < 6) {
       Alert.alert('Error', 'Password must be at least 6 characters long');
       return false;
@@ -65,29 +61,39 @@ export default function Signup() {
 
   const handleSignup = async () => {
     if (!validateInputs()) return;
-
     setLoading(true);
+
     try {
-      const res = await axios.post(`${API_URL}/auth/register`, {
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
-        phone: phone.trim(),
+      // ✅ Step 1: Create user in Appwrite
+      const newUser = await account.create(
+        ID.unique(),
+        email.trim().toLowerCase(),
         password,
-        role: 'user', // Default role
-      });
+        name.trim()
+      );
 
-      const { token, user } = res.data.data;
+      // ✅ Step 2: Save extra data (phone, createdAt) in your Appwrite Database
+      await databases.createDocument(
+        DATABASE_ID,
+        COLLECTION_ID,
+        newUser.$id, // Document ID = User ID for easy linking
+        {
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          phone: phone.trim(),
+          createdAt: new Date().toISOString(),
+        }
+      );
 
-      // Save to context and AsyncStorage
-      await login(token, user);
+      // ✅ Step 3: Redirect user to login page
+      Alert.alert('Success', 'Account created successfully! Please log in.');
+      router.replace('/(auth)/login');
 
-      Alert.alert('Success', 'Account created successfully!');
-      // Navigation handled by root layout
     } catch (err: any) {
       console.error('Signup error:', err);
       Alert.alert(
         'Signup Failed',
-        err.response?.data?.message || 'Unable to create account. Please try again.'
+        err.message || 'Unable to create account. Please try again.'
       );
     } finally {
       setLoading(false);
@@ -150,10 +156,7 @@ export default function Signup() {
             secureTextEntry={!showPassword}
             editable={!loading}
           />
-          <TouchableOpacity
-            onPress={() => setShowPassword(!showPassword)}
-            style={styles.eyeIcon}
-          >
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
             <MaterialIcons
               name={showPassword ? 'visibility' : 'visibility-off'}
               size={20}
@@ -189,17 +192,10 @@ export default function Signup() {
           onPress={handleSignup}
           disabled={loading}
         >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Sign Up</Text>
-          )}
+          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Sign Up</Text>}
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => router.push('/(auth)/login')}
-          disabled={loading}
-        >
+        <TouchableOpacity onPress={() => router.push('/(auth)/login')} disabled={loading}>
           <Text style={styles.link}>
             Already have an account? <Text style={styles.linkBold}>Login</Text>
           </Text>
@@ -210,13 +206,8 @@ export default function Signup() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  contentContainer: {
-    flexGrow: 1,
-  },
+  container: { flex: 1, backgroundColor: '#f8f9fa' },
+  contentContainer: { flexGrow: 1 },
   header: {
     paddingTop: 60,
     paddingBottom: 30,
@@ -230,21 +221,9 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: '700',
-    marginTop: 16,
-    color: '#333',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#888',
-    marginTop: 8,
-  },
-  form: {
-    flex: 1,
-    padding: 24,
-  },
+  title: { fontSize: 32, fontWeight: '700', marginTop: 16, color: '#333' },
+  subtitle: { fontSize: 16, color: '#888', marginTop: 8 },
+  form: { flex: 1, padding: 24 },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -255,17 +234,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     paddingHorizontal: 12,
   },
-  inputIcon: {
-    marginRight: 8,
-  },
-  input: {
-    flex: 1,
-    padding: 14,
-    fontSize: 16,
-  },
-  eyeIcon: {
-    padding: 8,
-  },
+  inputIcon: { marginRight: 8 },
+  input: { flex: 1, padding: 14, fontSize: 16 },
+  eyeIcon: { padding: 8 },
   button: {
     backgroundColor: '#FF6B35',
     padding: 16,
@@ -278,22 +249,8 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 5,
   },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 16,
-  },
-  link: {
-    marginTop: 24,
-    color: '#666',
-    textAlign: 'center',
-    fontSize: 14,
-  },
-  linkBold: {
-    color: '#FF6B35',
-    fontWeight: '700',
-  },
+  buttonDisabled: { opacity: 0.7 },
+  buttonText: { color: '#fff', fontWeight: '700', fontSize: 16 },
+  link: { marginTop: 24, color: '#666', textAlign: 'center', fontSize: 14 },
+  linkBold: { color: '#FF6B35', fontWeight: '700' },
 });

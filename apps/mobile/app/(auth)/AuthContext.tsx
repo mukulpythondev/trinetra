@@ -1,21 +1,18 @@
-// app/context/AuthContext.tsx
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import { account, ID } from '../../lib/appwrite.config';
 interface User {
-  id: string;
+  $id: string;
   name: string;
   email: string;
-  phone: string;
-  role: string;
 }
 
 interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: User | null;
-  token: string | null;
-  login: (token: string, user: User) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  signup: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -23,8 +20,8 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   isLoading: true,
   user: null,
-  token: null,
   login: async () => {},
+  signup: async () => {},
   logout: async () => {},
 });
 
@@ -33,67 +30,47 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check if user is already logged in
-    const checkAuth = async () => {
+    const loadSession = async () => {
       try {
-        const storedToken = await AsyncStorage.getItem('token');
-        const storedUser = await AsyncStorage.getItem('user');
-
-        if (storedToken && storedUser) {
-          setToken(storedToken);
-          setUser(JSON.parse(storedUser));
-          setIsAuthenticated(true);
-        }
-      } catch (error) {
-        console.error('Error checking auth:', error);
+        const currentUser = await account.get();
+        setUser(currentUser);
+        setIsAuthenticated(true);
+      } catch {
+        setUser(null);
+        setIsAuthenticated(false);
       } finally {
         setIsLoading(false);
       }
     };
-
-    checkAuth();
+    loadSession();
   }, []);
 
-  const login = async (newToken: string, newUser: User) => {
-    try {
-      await AsyncStorage.setItem('token', newToken);
-      await AsyncStorage.setItem('user', JSON.stringify(newUser));
-      setToken(newToken);
-      setUser(newUser);
-      setIsAuthenticated(true);
-    } catch (error) {
-      console.error('Error saving auth data:', error);
-    }
+  const login = async (email: string, password: string) => {
+    await account.createEmailPasswordSession(email, password);
+    const currentUser = await account.get();
+    setUser(currentUser);
+    setIsAuthenticated(true);
+  };
+
+  const signup = async (email: string, password: string, name: string) => {
+    await account.create(ID.unique(), email, password, name);
+    await login(email, password);
   };
 
   const logout = async () => {
-    try {
-      await AsyncStorage.removeItem('token');
-      await AsyncStorage.removeItem('user');
-      setToken(null);
-      setUser(null);
-      setIsAuthenticated(false);
-    } catch (error) {
-      console.error('Error clearing auth data:', error);
-    }
+    await account.deleteSession('current');
+    setUser(null);
+    setIsAuthenticated(false);
   };
 
   return (
     <AuthContext.Provider
-      value={{
-        isAuthenticated,
-        isLoading,
-        user,
-        token,
-        login,
-        logout,
-      }}
+      value={{ isAuthenticated, isLoading, user, login, signup, logout }}
     >
       {children}
     </AuthContext.Provider>

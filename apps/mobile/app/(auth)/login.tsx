@@ -1,12 +1,11 @@
 // app/(auth)/login.tsx
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
-import axios from 'axios';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useAuth } from './AuthContext';
 import { MaterialIcons } from '@expo/vector-icons';
 
-const API_URL = 'http://172.20.45.229:5000/api'; // Your backend URL
+// const API_URL = 'http://172.20.45.229:5000/api'; // Your backend URL
 
 export default function Login() {
   const router = useRouter();
@@ -17,35 +16,21 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please fill all fields');
-      return;
-    }
+  if (!email || !password) {
+    Alert.alert('Error', 'Please fill all fields');
+    return;
+  }
+  setLoading(true);
+  try {
+    await login(email.trim().toLowerCase(), password);
+    Alert.alert('Success', 'Login successful!');
+  } catch (err: any) {
+    Alert.alert('Login Failed', err.message || 'Unable to login.');
+  } finally {
+    setLoading(false);
+  }
+};
 
-    setLoading(true);
-    try {
-      const res = await axios.post(`${API_URL}/auth/login`, {
-        email: email.trim().toLowerCase(),
-        password,
-      });
-
-      const { token, user } = res.data.data;
-
-      // Save to context and AsyncStorage
-      await login(token, user);
-
-      Alert.alert('Success', 'Login successful!');
-      // Navigation handled by root layout
-    } catch (err: any) {
-      console.error('Login error:', err);
-      Alert.alert(
-        'Login Failed',
-        err.response?.data?.message || 'Unable to login. Please try again.'
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <View style={styles.container}>
