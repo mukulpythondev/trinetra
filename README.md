@@ -20,17 +20,16 @@ The system consists of:
 * An **admin dashboard** for live surveillance, analytics, and alert control
 
 ---
-## Mobile App Demo
-### Home Page
-![trinetra_home](https://github.com/user-attachments/assets/8333391f-5bd4-48ea-a3ac-c9a5a72c0a6d)
+### 📱 Mobile App Screenshots
 
-### Queue Page
-![trinetra_queue](https://github.com/user-attachments/assets/68ccb399-e197-4e78-897e-a6cf54aa77ca)
+|                                       🏠 Home Page                                       |                                       📊 Queue Page                                       |                                       🔮 Crowd Prediction                                      |
+| :--------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------: | :--------------------------------------------------------------------------------------------: |
+| ![Home](https://github.com/user-attachments/assets/8333391f-5bd4-48ea-a3ac-c9a5a72c0a6d) | ![Queue](https://github.com/user-attachments/assets/68ccb399-e197-4e78-897e-a6cf54aa77ca) | ![Prediction](https://github.com/user-attachments/assets/bbe34f96-a53c-485b-ac67-8481fab25ab6) |
 
-### Crowd Prediction
+> The Trinetra mobile app (built with **React Native**) enables on-ground officers to monitor **live crowd flow**, **queue lengths**, and **next-day footfall predictions** through a simple, intuitive UI.
 
-![trinetra_prediction](https://github.com/user-attachments/assets/bbe34f96-a53c-485b-ac67-8481fab25ab6)
-
+### Temple Dashboard
+ <img width="1920" height="928" alt="image" src="https://github.com/user-attachments/assets/8778e835-f1ef-4899-954f-61124b5c994e" />
 
 ## ⚙️ Key Features
 
